@@ -1,3 +1,8 @@
+# JetBrains' PyCharm
+.idea
+
+# **BELOW THIS LINE WAS AUTO-GENERATED**
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
