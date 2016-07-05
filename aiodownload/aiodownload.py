@@ -2,6 +2,7 @@
 
 import aiohttp
 import asyncio
+from concurrent.futures import as_completed, ProcessPoolExecutor
 import errno
 import logging
 import os
@@ -11,17 +12,21 @@ from .strategy import Lenient
 logger = logging.getLogger(__name__)
 
 
-class UrlBundle(object):
+class AioDownloadBundle(object):
 
-    def __init__(self, url):
+    def __init__(self, url, processor='sink'):
 
-        self.url = url
         self.num_tries = 0
+        self.processor = processor
+        self.url = url
         self._priority = 100
 
     def __lt__(self, other):
-        assert isinstance(other, UrlBundle)
-        return self.priority <= other.priority
+        assert isinstance(other, AioDownloadBundle)
+        if self._priority == other._priority:
+            return self.url < other.url
+        else:
+            return self._priority < other.priority
 
     @property
     def priority(self):
@@ -30,34 +35,47 @@ class UrlBundle(object):
 
 class AioDownload(object):
 
-    def __init__(self, client, concurrent=3, home=None, request_strategy=None, timeout=60, url_transform=None):
+    CONFIG = {
+        'concurrent': 2,
+        'home': os.path.abspath(os.sep),
+        'max_workers': 2,
+        'request_strategy': Lenient(),
+        'skip_cached': False,
+        'timeout': 60,
+        'url_transform': lambda x: os.path.sep.join(x.split('/')[2:])
+    }
+
+    def __init__(
+        self,
+        client,
+        concurrent=None,
+        home=None,
+        max_workers=None,
+        request_strategy=None,
+        skip_cached=None,
+        timeout=None,
+        url_transform=None
+    ):
 
         self.priority_queue = asyncio.PriorityQueue()
         self._client = client
-        self._concurrent = concurrent
-        self._timeout = timeout
+        self._concurrent = concurrent or AioDownload.CONFIG['concurrent']
 
-        if home is None:
-            self._home = os.path.abspath(os.sep)
-        else:
-            self._home = home
+        max_workers = max_workers or AioDownload.CONFIG['max_workers']
+        self._file_pool = ProcessPoolExecutor(max_workers=max_workers)
 
-        if request_strategy is None:
-            self._request_strategy = Lenient()
-        else:
-            self._request_strategy = request_strategy
-
-        if url_transform is None:
-            self._url_transform = lambda url: os.path.sep.join(url.split('/')[2:])
-        else:
-            self._url_transform = url_transform
+        self._home = home or AioDownload.CONFIG['home']
+        self._request_strategy = request_strategy or AioDownload.CONFIG['request_strategy']
+        self._skip_cached = skip_cached or AioDownload.CONFIG['skip_cached']
+        self._timeout = timeout or AioDownload.CONFIG['timeout']
+        self._url_transform = url_transform or AioDownload.CONFIG['url_transform']
 
     async def get(self, url_bundle):
 
         with aiohttp.Timeout(self._timeout):
 
             pause_time = self._request_strategy.get_time(url_bundle.num_tries)
-            if pause_time > 0:
+            if pause_time >= 0:
 
                 logger.debug('Pausing for {0} seconds between requests'.format(pause_time))
                 await asyncio.sleep(pause_time)
@@ -89,29 +107,51 @@ class AioDownload(object):
 
         while not self.priority_queue.empty():
 
-            priority, queue_url = await self.priority_queue.get()
+            priority, queue_url_bundle = await self.priority_queue.get()
+            file_path = os.path.sep.join([self._home, self._url_transform(queue_url_bundle.url)])
+            file_exists = os.path.isfile(file_path)
 
-            logger.debug('[Task #: {0}, URL: {1}]'.format(task_id, queue_url.url))
-            content = await self.get(queue_url)
-            if content:
+            if not file_exists:
+                try:
+                    os.makedirs(os.path.dirname(file_path))
+                except OSError as exc:  # Guard against race condition
+                    if exc.errno != errno.EEXIST:
+                        raise
 
-                file_path = self._home + os.path.sep + self._url_transform(queue_url.url)
+            if not (file_exists and self._skip_cached):
 
-                if not os.path.exists(os.path.dirname(file_path)):
-                    try:
-                        os.makedirs(os.path.dirname(file_path))
-                    except OSError as exc:  # Guard against race condition
-                        if exc.errno != errno.EEXIST:
-                            raise
+                content = await self.get(queue_url_bundle) or b''
+                with open(file_path, 'wb+') as f:
+                    f.write(content)
 
-                with open(file_path, 'wb+') as fd:
-                    fd.write(content)
+                msg = 'File written'
+
+            else:
+
+                msg = 'Cache hit'
+
+            logger.info('[Task #: {0}, URL: {1}, File: {2}] {3}'.format(task_id, queue_url_bundle.url, file_path, msg))
+
+            processor = getattr(self, queue_url_bundle.processor)
+            if processor:
+                future_bundles = self._file_pool.submit(processor, file_path)
+                as_completed(self._queue_future_bundles(future_bundles))
 
     def get_tasks(self, loop):
+
         return [
             loop.create_task(self.get_and_write(i))
             for i in range(self._concurrent)
         ]
+
+    @staticmethod
+    def sink(file_path):
+        pass
+
+    def _queue_future_bundles(self, future):
+        future_bundles = future.result() or []
+        for fb in future_bundles:
+            self.priority_queue.put_nowait((fb.priority, fb, ))
 
 
 class AioDownloadException(Exception):
