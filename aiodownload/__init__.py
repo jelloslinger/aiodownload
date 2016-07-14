@@ -3,13 +3,17 @@
 """
 
 from .aiodownload import AioDownload, AioDownloadBundle
+# from .api import close, one, swarm
 from .strategy import BackOff, Lenient, RequestStrategy
 
 
 __all__ = (
     'AioDownload',
-    'AioDownloadBundle'
+    'AioDownloadBundle',
     'BackOff',
     'Lenient',
-    'RequestStrategy'
+    'RequestStrategy',
+    # 'close',
+    # 'one',
+    # 'swarm'
 )
