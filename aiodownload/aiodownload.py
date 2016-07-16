@@ -2,11 +2,12 @@
 
 import aiohttp
 import asyncio
+from concurrent.futures import ProcessPoolExecutor
 import errno
 import logging
 import os
 
-from .strategy import Lenient
+from .strategy import DownloadStrategy, Lenient
 
 logger = logging.getLogger(__name__)
 
@@ -37,48 +38,27 @@ class AioDownloadBundle(object):
 
 class AioDownload(object):
 
-    CONFIG = {
-        'concurrent': 2,
-        'home': os.path.abspath(os.sep),
-        'request_strategy': Lenient(),
-        'skip_cached': False,
-        'timeout': 60,
-        'url_transform': lambda x: os.path.sep.join(x.split('/')[2:])
-    }
-    CHUNK_SIZE = 65536
+    def __init__(self, loop=None, client=None, concurrent=2, max_workers=1, download_strategy=None, request_strategy=None):
 
-    def __init__(
-        self,
-        loop,
-        client,
-        concurrent=None,
-        home=None,
-        request_strategy=None,
-        skip_cached=None,
-        timeout=None,
-        url_transform=None
-    ):
+        self._loop = loop or asyncio.get_event_loop()
+        self._client = client or aiohttp.ClientSession(loop=self._loop)
 
-        self._loop = loop
-        self._client = client
-        self._home = home or AioDownload.CONFIG['home']
-        self._request_strategy = request_strategy or AioDownload.CONFIG['request_strategy']
+        # Bounded semaphores guard how many main and process methods proceed
+        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)        # maximum concurrent aiohttp connections
+        self._process_semaphore = asyncio.BoundedSemaphore(max_workers)    # maximum number of file_path processors
 
-        _concurrent = concurrent or AioDownload.CONFIG['concurrent']
-        self._semaphore = asyncio.Semaphore(_concurrent)
+        # Configuration objects managing download and request strategies
+        self._download_strategy = download_strategy or DownloadStrategy()  # properties: chunk_size, home, skip_cached
+        self._request_strategy = request_strategy or Lenient()             # properties: max_time, max_tries, timeout
 
-        self._skip_cached = skip_cached or AioDownload.CONFIG['skip_cached']
-        self._timeout = timeout or AioDownload.CONFIG['timeout']
-        self._url_transform = url_transform or AioDownload.CONFIG['url_transform']
+    async def main(self, bundle):
 
-    async def _main(self, bundle):
+        with (await self._main_semaphore):
 
-        with (await self._semaphore):
-
-            file_path = self._home + self._url_transform(bundle.url)
+            file_path = self._download_strategy.get_file_path(bundle.url)
             file_exists = os.path.isfile(file_path)
 
-            if not (file_exists and self._skip_cached):
+            if not (file_exists and self._download_strategy.skip_cached):
 
                 while bundle._status_msg in (STATUS_ATTEMPT, STATUS_INIT, ):
 
@@ -89,17 +69,21 @@ class AioDownload(object):
                     logger.debug('Sleeping {0} seconds between requests'.format(sleep_time))
                     await asyncio.sleep(sleep_time)
 
-                    bundle = await self._get_and_write(bundle, file_path)
+                    bundle = await self.get_and_write(bundle, file_path)
 
             else:
 
                 bundle._status_msg = STATUS_CACHE
 
             logger.info(bundle.status_msg)
+            process = self._loop.create_task(self._process(file_path))
 
-    async def _get_and_write(self, bundle, file_path):
+        await process
+        return bundle.info, file_path
 
-        with aiohttp.Timeout(self._timeout):
+    async def get_and_write(self, bundle, file_path):
+
+        with aiohttp.Timeout(self._request_strategy.timeout):
 
             async with self._client.get(bundle.url) as response:
 
@@ -109,14 +93,13 @@ class AioDownload(object):
 
                     try:
                         os.makedirs(os.path.dirname(file_path))
-                    except OSError as exc:  # Guard against race condition
+                    except OSError as exc:      # Guard against race condition
                         if exc.errno != errno.EEXIST:
                             raise
 
-                    # TODO - more checking around write path?
                     with open(file_path, 'wb+') as f:
                         while True:
-                            chunk = await response.content.read(AioDownload.CHUNK_SIZE)
+                            chunk = await response.content.read(self._download_strategy.chunk_size)
                             if not chunk:
                                 break
                             f.write(chunk)
@@ -141,6 +124,30 @@ class AioDownload(object):
                         bundle._status_msg = STATUS_FAIL
 
         return bundle
+
+    async def _process(self, file_path):
+
+        with (await self._process_semaphore):
+            with ProcessPoolExecutor():
+                try:
+                    self.process(file_path)
+                except NotImplementedError as error_msg:
+                    logger.debug(error_msg)
+
+    def get_bundled_tasks(self, urls):
+        return [
+            self._loop.create_task(self.main(AioDownloadBundle(url)))
+            for url in urls
+        ]
+
+    def process(self, file_path):
+
+        msg = (
+            'A process method has not been implemented.  Developers may '
+            'inherit {0} and implement this method to process a file returned '
+            'from a download.  No action taken on {1}.'
+        ).format(self.__class__.__name__, file_path)
+        raise NotImplementedError(msg)
 
 
 class AioDownloadException(Exception):
