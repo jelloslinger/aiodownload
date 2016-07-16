@@ -1,16 +1,40 @@
 # -*- coding: utf-8 -*-
 
+import os
+
+
+class DownloadStrategy(object):
+    """DownloadStrategy is an injection class for AioDownload.  The purpose is
+    to control download options for AioDownload.
+    """
+
+    def __init__(self, chunk_size=65536, home=None, skip_cached=False):
+        self.chunk_size = chunk_size
+        self.home = home or os.path.abspath(os.sep)
+        self.skip_cached = skip_cached
+
+    def get_file_path(self, url):
+        # TODO - cleanse the file_path
+        return self.home + self.url_transform(url)
+
+    @staticmethod
+    def url_transform(url):
+        # TODO - this could be tighter
+        return os.path.sep.join(url.split('/')[2:])
+
 
 class RequestStrategy(object):
     """RequestStrategy is an injection class for AioDownload.  The purpose is
     to control how AioDownload performs requests and retry requests.
     """
 
-    def __init__(self, max_time=0, max_tries=0):
+    def __init__(self, max_time=0, max_tries=0, timeout=60):
         self.max_tries = max_tries
+        self.timeout = timeout
         self._max_time = max_time
 
-    def assert_response(self, response):
+    @staticmethod
+    def assert_response(response):
         assert response.status < 400
 
     def retry(self, response):
