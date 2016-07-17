@@ -3,7 +3,6 @@
 import aiohttp
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
-import errno
 import logging
 import os
 
@@ -22,6 +21,7 @@ class AioDownloadBundle(object):
 
     def __init__(self, url, info=None):
 
+        self.file_path = None
         self.info = info
         self.num_tries = 0
         self.url = url
@@ -29,8 +29,9 @@ class AioDownloadBundle(object):
 
     @property
     def status_msg(self):
-        return '[URL: {0}, Attempts: {1}, Status: {2}]'.format(
+        return '[URL: {0}, File Path: {1}, Attempts: {2}, Status: {3}]'.format(
             self.url,
+            self.file_path,
             self.num_tries,
             self._status_msg
         )
@@ -55,8 +56,8 @@ class AioDownload(object):
 
         with (await self._main_semaphore):
 
-            file_path = self._download_strategy.get_file_path(bundle.url)
-            file_exists = os.path.isfile(file_path)
+            bundle.file_path = self._download_strategy.get_file_path(bundle.url)
+            file_exists = os.path.isfile(bundle.file_path)
 
             if not (file_exists and self._download_strategy.skip_cached):
 
@@ -69,19 +70,19 @@ class AioDownload(object):
                     logger.debug('Sleeping {0} seconds between requests'.format(sleep_time))
                     await asyncio.sleep(sleep_time)
 
-                    bundle = await self.get_and_write(bundle, file_path)
+                    bundle = await self.get_and_write(bundle)
 
             else:
 
                 bundle._status_msg = STATUS_CACHE
 
             logger.info(bundle.status_msg)
-            process = self._loop.create_task(self._process(file_path))
+            process = self._loop.create_task(self._process(bundle))
 
         await process
-        return bundle.info, file_path
+        return bundle
 
-    async def get_and_write(self, bundle, file_path):
+    async def get_and_write(self, bundle):
 
         with aiohttp.Timeout(self._request_strategy.timeout):
 
@@ -90,20 +91,7 @@ class AioDownload(object):
                 try:
 
                     self._request_strategy.assert_response(response)
-
-                    try:
-                        os.makedirs(os.path.dirname(file_path))
-                    except OSError as exc:      # Guard against race condition
-                        if exc.errno != errno.EEXIST:
-                            raise
-
-                    with open(file_path, 'wb+') as f:
-                        while True:
-                            chunk = await response.content.read(self._download_strategy.chunk_size)
-                            if not chunk:
-                                break
-                            f.write(chunk)
-
+                    await self._download_strategy.on_success(response, bundle)
                     bundle._status_msg = STATUS_DONE
 
                 except AssertionError:
@@ -113,26 +101,32 @@ class AioDownload(object):
                         bundle.num_tries += 1
 
                         if bundle.num_tries == self._request_strategy.max_tries:
-                            open(file_path, 'wb+').close()
+
+                            await self._download_strategy.on_fail(bundle)
                             bundle._status_msg = STATUS_FAIL
+
                         else:
+
                             bundle._status_msg = STATUS_ATTEMPT
 
                     else:
 
-                        open(file_path, 'wb+').close()
+                        await self._download_strategy.on_fail(bundle)
                         bundle._status_msg = STATUS_FAIL
 
         return bundle
 
-    async def _process(self, file_path):
+    async def _process(self, bundle):
 
         with (await self._process_semaphore):
             with ProcessPoolExecutor():
                 try:
-                    self.process(file_path)
+                    result = self.process(bundle)
                 except NotImplementedError as error_msg:
+                    result = None
                     logger.debug(error_msg)
+
+        return result
 
     def get_bundled_tasks(self, urls):
         return [
@@ -140,13 +134,13 @@ class AioDownload(object):
             for url in urls
         ]
 
-    def process(self, file_path):
+    def process(self, bundle):
 
         msg = (
             'A process method has not been implemented.  Developers may '
             'inherit {0} and implement this method to process a file returned '
             'from a download.  No action taken on {1}.'
-        ).format(self.__class__.__name__, file_path)
+        ).format(self.__class__.__name__, bundle.file_path)
         raise NotImplementedError(msg)
 
 

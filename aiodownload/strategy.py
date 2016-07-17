@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import errno
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 
 class DownloadStrategy(object):
@@ -12,6 +16,25 @@ class DownloadStrategy(object):
         self.chunk_size = chunk_size
         self.home = home or os.path.abspath(os.sep)
         self.skip_cached = skip_cached
+
+    async def on_fail(self, bundle):
+
+        open(bundle.file_path, 'wb+').close()
+
+    async def on_success(self, response, bundle):
+
+        try:
+            os.makedirs(os.path.dirname(bundle.file_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
+
+        with open(bundle.file_path, 'wb+') as f:
+            while True:
+                chunk = await response.content.read(self.chunk_size)
+                if not chunk:
+                    break
+                f.write(chunk)
 
     def get_file_path(self, url):
         # TODO - cleanse the file_path
