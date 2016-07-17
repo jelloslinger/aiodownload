@@ -6,32 +6,31 @@ import asyncio
 
 def one(url, loop=None):
 
-    return [file_path for file_path in swarm([url], loop=loop)][0]
+    return [s for s in swarm([url], loop=loop)][0]
 
 
 def swarm(urls, loop=None):
 
-    for e in each(urls, lambda x: str(x), loop=loop):
-        yield e[1]
+    return [e for e in each(urls, loop=loop)]
 
 
-def each(iterable, url_map, loop=None):
+def each(iterable, url_map=None, loop=None):
+
+    url_map = url_map or _url_map
 
     event_loop = loop or asyncio.get_event_loop()
 
-    try:
+    download = AioDownload(event_loop)
+    tasks = [
+        event_loop.create_task(
+            download.main(AioDownloadBundle(url_map(i), info=i))
+        ) for i in iterable
+    ]
+    for task_set in event_loop.run_until_complete(asyncio.wait(tasks)):
+        for task in task_set:
+            yield task.result()
 
-        download = AioDownload(event_loop)
-        tasks = [
-            event_loop.create_task(
-                download.main(AioDownloadBundle(url_map(i), info=i))
-            ) for i in iterable
-        ]
-        for task_set in event_loop.run_until_complete(asyncio.wait(tasks)):
-            for task in task_set:
-                info, file_path = task.result()
-                yield info, file_path
 
-    finally:
+def _url_map(x):
+    return str(x)
 
-        event_loop.close()
