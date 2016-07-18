@@ -86,33 +86,39 @@ class AioDownload(object):
 
         with aiohttp.Timeout(self._request_strategy.timeout):
 
-            async with self._client.get(bundle.url) as response:
+            try:
 
-                try:
+                bundle.num_tries += 1
+                async with self._client.get(bundle.url) as response:
 
-                    self._request_strategy.assert_response(response)
-                    await self._download_strategy.on_success(response, bundle)
-                    bundle._status_msg = STATUS_DONE
+                    try:
 
-                except AssertionError:
+                        self._request_strategy.assert_response(response)
+                        await self._download_strategy.on_success(response, bundle)
+                        bundle._status_msg = STATUS_DONE
 
-                    if self._request_strategy.retry(response):
+                    except AssertionError:
 
-                        bundle.num_tries += 1
+                        if self._request_strategy.retry(response):
 
-                        if bundle.num_tries == self._request_strategy.max_tries:
+                            if bundle.num_tries == self._request_strategy.max_tries:
+
+                                await self._download_strategy.on_fail(bundle)
+                                bundle._status_msg = STATUS_FAIL
+
+                            else:
+
+                                bundle._status_msg = STATUS_ATTEMPT
+
+                        else:
 
                             await self._download_strategy.on_fail(bundle)
                             bundle._status_msg = STATUS_FAIL
 
-                        else:
+            except ValueError as err:
 
-                            bundle._status_msg = STATUS_ATTEMPT
-
-                    else:
-
-                        await self._download_strategy.on_fail(bundle)
-                        bundle._status_msg = STATUS_FAIL
+                bundle._status_msg = STATUS_FAIL
+                logger.warn(' '.join([bundle.status_msg, str(err)]))
 
         return bundle
 
@@ -122,9 +128,9 @@ class AioDownload(object):
             with ProcessPoolExecutor():
                 try:
                     result = self.process(bundle)
-                except NotImplementedError as error_msg:
+                except NotImplementedError as err:
                     result = None
-                    logger.debug(error_msg)
+                    logger.debug(str(err))
 
         return result
 
