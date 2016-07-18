@@ -25,7 +25,7 @@ def each(iterable, url_map=None, download=None):
         info = None if i == url else i
         tasks.append(
             download._loop.create_task(
-                AioDownload(url, info=info)
+                download.main(AioDownloadBundle(url, info=info))
             )
         )
 
