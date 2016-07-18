@@ -39,10 +39,16 @@ class AioDownloadBundle(object):
 
 class AioDownload(object):
 
-    def __init__(self, loop=None, client=None, concurrent=2, max_workers=1, download_strategy=None, request_strategy=None):
+    def __init__(self, client=None, concurrent=2, max_workers=1, download_strategy=None, request_strategy=None):
 
-        self._loop = loop or asyncio.get_event_loop()
-        self._client = client or aiohttp.ClientSession(loop=self._loop)
+        if not client:
+            # Get the event loop and initialize a client session if not provided
+            self._loop = asyncio.get_event_loop()
+            self._client = aiohttp.ClientSession(loop=self._loop)
+        else:
+            # Or grab the event loop from the client session
+            self._loop = client._loop
+            self._client = client
 
         # Bounded semaphores guard how many main and process methods proceed
         self._main_semaphore = asyncio.BoundedSemaphore(concurrent)        # maximum concurrent aiohttp connections
