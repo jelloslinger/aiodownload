@@ -3,6 +3,9 @@
 import errno
 import logging
 import os
+import string
+import unicodedata
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +40,42 @@ class DownloadStrategy(object):
                 f.write(chunk)
 
     def get_file_path(self, url):
-        # TODO - cleanse the file_path
         return self.home + self.url_transform(url)
 
-    @staticmethod
-    def url_transform(url):
-        # TODO - this could be tighter
-        return os.path.sep.join(url.split('/')[2:])
+    def url_transform(self, url):
+
+        parsed_url = urlparse(url)
+
+        path_segments = [
+            self._clean_filename(path_segment)
+            for path_segment in parsed_url.path.split('/')[1:]
+        ]
+        if not len(path_segments):
+            path_segments = ['index']
+
+        params = self._clean_filename(
+            parsed_url.params.replace(';', '-').replace(',', '.').replace('=', '_')
+        )
+        if len(params):
+            params = '(' + params + ')'
+
+        query = self._clean_filename(
+            parsed_url.query.replace('=', '_').replace('&', '-')
+        )
+        if len(query):
+            query = '_' + query
+
+        return os.path.sep.join([parsed_url.netloc] + path_segments) + params + query
+
+    def _clean_filename(self, filename):
+
+        return ''.join([
+            c for c in unicodedata.normalize('NFKD', filename)
+            if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(
+                string.ascii_letters,
+                string.digits
+            )
+        ])
 
 
 class RequestStrategy(object):
