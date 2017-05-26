@@ -22,8 +22,8 @@ STATUS_FAIL = 'Download failed'
 STATUS_INIT = 'Initialized'
 
 
-class AioDownloadBundle(object):
-    def __init__(self, url, params=None, info=None):
+class AioDownloadBundle:
+    def __init__(self, url, info=None, params=None):
 
         self.file_path = None
         self.info = info
@@ -39,16 +39,16 @@ class AioDownloadBundle(object):
         )
 
 
-class AioDownload(object):
+class AioDownload:
     def __init__(self, client=None, concurrent=2, download_strategy=None, request_strategy=None):
 
         if not client:
             # Get the event loop and initialize a client session if not provided
-            self._loop = asyncio.get_event_loop()
-            self.client = aiohttp.ClientSession(loop=self._loop)
+            self.loop = asyncio.get_event_loop()
+            self.client = aiohttp.ClientSession(loop=self.loop)
         else:
             # Or grab the event loop from the client session
-            self._loop = client._loop
+            self.loop = client._loop
             self.client = client
 
         # Bounded semaphore guards how many main methods run concurrently
@@ -76,7 +76,7 @@ class AioDownload(object):
                     logger.debug('Sleeping {0} seconds between requests'.format(sleep_time))
                     await asyncio.sleep(sleep_time)
 
-                    bundle = await self.get_and_write(bundle)
+                    bundle = await self.request_and_download(bundle)
 
             else:
 
@@ -86,7 +86,7 @@ class AioDownload(object):
 
         return bundle
 
-    async def get_and_write(self, bundle):
+    async def request_and_download(self, bundle):
 
         with aiohttp.Timeout(self._request_strategy.timeout):
 
@@ -94,7 +94,8 @@ class AioDownload(object):
 
                 bundle.num_tries += 1
 
-                async with self.client.get(bundle.url) as response:
+                client_method = getattr(self.client, 'post' if bundle.params else 'get')
+                async with client_method(bundle.url) as response:
 
                     try:
 
@@ -128,7 +129,7 @@ class AioDownload(object):
         return bundle
 
     def get_bundled_tasks(self, urls):
-        return [self._loop.create_task(self.main(AioDownloadBundle(url))) for url in urls]
+        return [self.loop.create_task(self.main(AioDownloadBundle(url))) for url in urls]
 
 
 class AioDownloadException(Exception):

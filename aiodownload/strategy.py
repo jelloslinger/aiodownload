@@ -8,10 +8,12 @@ from urllib.parse import urlparse
 logger = logging.getLogger(__name__)
 
 
-class DownloadStrategy(object):
+class DownloadStrategy:
     """DownloadStrategy is an injection class for AioDownload.  The purpose is
     to control download options for AioDownload.
     """
+
+    REPLACEMENT_CHAR = {'&': '-', ',': '.', ';': '-', '=': '_'}
 
     def __init__(self, chunk_size=65536, home=None, skip_cached=False):
         self.chunk_size = chunk_size
@@ -44,31 +46,42 @@ class DownloadStrategy(object):
 
         parsed_url = urlparse(bundle.url)
 
-        path_segments = [self._clean_filename(path_segment) for path_segment in parsed_url.path.split('/')[1:]]
+        path_segments = [
+            DownloadStrategy.clean_filename(path_segment) for path_segment in parsed_url.path.split('/')[1:]
+        ]
         if not len(path_segments):
             path_segments = ['index']
 
-        params = self._clean_filename(parsed_url.params.replace(';', '-').replace(',', '.').replace('=', '_'))
+        params = DownloadStrategy.clean_filename(parsed_url.params)
         if len(params):
             params = '(' + params + ')'
 
-        query = self._clean_filename(parsed_url.query.replace('=', '_').replace('&', '-'))
+        query = DownloadStrategy.clean_filename(parsed_url.query)
         if len(query):
             query = '_' + query
 
         return os.path.sep.join([parsed_url.netloc] + path_segments) + params + query
 
-    def _clean_filename(self, filename):
+    @staticmethod
+    def clean_filename(filename):
 
         return ''.join(
             [
-                c for c in unicodedata.normalize('NFKD', filename)
+                c for c in unicodedata.normalize(
+                    'NFKD',
+                    ''.join([DownloadStrategy.replace_char(c) for c in filename])
+                )
                 if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(string.ascii_letters, string.digits)
             ]
         )
 
+    @staticmethod
+    def replace_char(char, replacements=None):
 
-class RequestStrategy(object):
+        return DownloadStrategy.REPLACEMENT_CHAR.get(char, char) if not replacements else replacements.get(char, char)
+
+
+class RequestStrategy:
     """RequestStrategy is an injection class for AioDownload.  The purpose is
     to control how AioDownload performs requests and retry requests.
     """
