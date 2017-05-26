@@ -1,5 +1,5 @@
-# JetBrains' PyCharm
-.idea
+.idea           # JetBrains' PyCharm
+.style.yapf     # Config for Google's style formatter for Python files
 
 # **BELOW THIS LINE WAS AUTO-GENERATED**
 
