@@ -1,17 +1,15 @@
-# -*- coding: utf-8 -*-
-
 from aiodownload import AioDownloadBundle, AioDownload
 import asyncio
 
 
-def one(url, download=None):
+def one(url_or_bundle, download=None):
 
-    return [s for s in swarm([url], download=download)][0]
+    return [s for s in swarm([url_or_bundle], download=download)][0]
 
 
-def swarm(urls, download=None):
+def swarm(iterable, download=None):
 
-    return [e for e in each(urls, download=download)]
+    return [e for e in each(iterable, download=download)]
 
 
 def each(iterable, url_map=None, download=None):
@@ -21,11 +19,14 @@ def each(iterable, url_map=None, download=None):
 
     tasks = []
     for i in iterable:
-        url = url_map(i)
-        info = None if i == url else i
+
+        bundle = url_map(i)
+        if i != bundle.url:
+            bundle.info = i
+
         tasks.append(
             download._loop.create_task(
-                download.main(AioDownloadBundle(url, info=info))
+                download.main(bundle)
             )
         )
 
@@ -35,5 +36,7 @@ def each(iterable, url_map=None, download=None):
 
 
 def _url_map(x):
-    return str(x)
 
+    if not isinstance(x, AioDownloadBundle):
+        x = AioDownloadBundle(x)
+    return x
