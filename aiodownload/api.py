@@ -24,11 +24,7 @@ def each(iterable, url_map=None, download=None):
         if i != bundle.url:
             bundle.info = i
 
-        tasks.append(
-            download._loop.create_task(
-                download.main(bundle)
-            )
-        )
+        tasks.append(download._loop.create_task(download.main(bundle)))
 
     for task_set in download._loop.run_until_complete(asyncio.wait(tasks)):
         for task in task_set:

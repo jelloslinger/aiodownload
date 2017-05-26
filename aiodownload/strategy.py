@@ -44,22 +44,15 @@ class DownloadStrategy(object):
 
         parsed_url = urlparse(bundle.url)
 
-        path_segments = [
-            self._clean_filename(path_segment)
-            for path_segment in parsed_url.path.split('/')[1:]
-        ]
+        path_segments = [self._clean_filename(path_segment) for path_segment in parsed_url.path.split('/')[1:]]
         if not len(path_segments):
             path_segments = ['index']
 
-        params = self._clean_filename(
-            parsed_url.params.replace(';', '-').replace(',', '.').replace('=', '_')
-        )
+        params = self._clean_filename(parsed_url.params.replace(';', '-').replace(',', '.').replace('=', '_'))
         if len(params):
             params = '(' + params + ')'
 
-        query = self._clean_filename(
-            parsed_url.query.replace('=', '_').replace('&', '-')
-        )
+        query = self._clean_filename(parsed_url.query.replace('=', '_').replace('&', '-'))
         if len(query):
             query = '_' + query
 
@@ -67,13 +60,12 @@ class DownloadStrategy(object):
 
     def _clean_filename(self, filename):
 
-        return ''.join([
-            c for c in unicodedata.normalize('NFKD', filename)
-            if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(
-                string.ascii_letters,
-                string.digits
-            )
-        ])
+        return ''.join(
+            [
+                c for c in unicodedata.normalize('NFKD', filename)
+                if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(string.ascii_letters, string.digits)
+            ]
+        )
 
 
 class RequestStrategy(object):
@@ -98,7 +90,6 @@ class RequestStrategy(object):
 
 
 class Lenient(RequestStrategy):
-
     def __init__(self, max_time=2, max_tries=2):
         super(Lenient, self).__init__(max_time, max_tries)
 
@@ -115,12 +106,11 @@ class Lenient(RequestStrategy):
 
 
 class BackOff(RequestStrategy):
-
     def __init__(self, max_time=60, max_tries=10):
         super(BackOff, self).__init__(max_time, max_tries)
 
     def get_sleep_time(self, num_tries):
         if num_tries < self.max_tries:
-            return min(2**(num_tries-2), self._max_time)
+            return min(2**(num_tries - 2), self._max_time)
         else:
             return -1
