@@ -23,7 +23,6 @@ STATUS_INIT = 'Initialized'
 
 
 class AioDownloadBundle(object):
-
     def __init__(self, url, params=None, info=None):
 
         self.file_path = None
@@ -36,15 +35,11 @@ class AioDownloadBundle(object):
     @property
     def status_msg(self):
         return '[URL: {0}, File Path: {1}, Attempts: {2}, Status: {3}]'.format(
-            self.url,
-            self.file_path,
-            self.num_tries,
-            self._status_msg
+            self.url, self.file_path, self.num_tries, self._status_msg
         )
 
 
 class AioDownload(object):
-
     def __init__(self, client=None, concurrent=2, download_strategy=None, request_strategy=None):
 
         if not client:
@@ -57,11 +52,11 @@ class AioDownload(object):
             self.client = client
 
         # Bounded semaphore guards how many main methods run concurrently
-        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)        # maximum concurrent aiohttp connections
+        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)  # maximum concurrent aiohttp connections
 
         # Configuration objects managing download and request strategies
         self._download_strategy = download_strategy or DownloadStrategy()  # properties: chunk_size, home, skip_cached
-        self._request_strategy = request_strategy or Lenient()             # properties: max_time, max_tries, timeout
+        self._request_strategy = request_strategy or Lenient()  # properties: max_time, max_tries, timeout
 
     async def main(self, bundle):
 
@@ -133,10 +128,7 @@ class AioDownload(object):
         return bundle
 
     def get_bundled_tasks(self, urls):
-        return [
-            self._loop.create_task(self.main(AioDownloadBundle(url)))
-            for url in urls
-        ]
+        return [self._loop.create_task(self.main(AioDownloadBundle(url))) for url in urls]
 
 
 class AioDownloadException(Exception):
