@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import errno
 import logging
 import os
@@ -17,7 +15,7 @@ class DownloadStrategy(object):
 
     def __init__(self, chunk_size=65536, home=None, skip_cached=False):
         self.chunk_size = chunk_size
-        self.home = home or os.path.abspath(os.sep)
+        self.home = home or os.getcwd()
         self.skip_cached = skip_cached
 
     async def on_fail(self, bundle):
@@ -39,12 +37,12 @@ class DownloadStrategy(object):
                     break
                 f.write(chunk)
 
-    def get_file_path(self, url):
-        return self.home + self.url_transform(url)
+    def get_file_path(self, bundle):
+        return os.path.sep.join([self.home, self.url_transform(bundle)])
 
-    def url_transform(self, url):
+    def url_transform(self, bundle):
 
-        parsed_url = urlparse(url)
+        parsed_url = urlparse(bundle.url)
 
         path_segments = [
             self._clean_filename(path_segment)
