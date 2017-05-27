@@ -105,7 +105,7 @@ class RequestStrategy:
 
 class Lenient(RequestStrategy):
     def __init__(self, max_time=2, max_tries=2):
-        Lenient.__init__(max_time, max_tries)
+        RequestStrategy.__init__(max_time, max_tries)
 
     def retry(self, response):
         if response.status == 404:
@@ -121,7 +121,7 @@ class Lenient(RequestStrategy):
 
 class BackOff(RequestStrategy):
     def __init__(self, max_time=60, max_tries=10):
-        BackOff.__init__(max_time, max_tries)
+        RequestStrategy.__init__(max_time, max_tries)
 
     def get_sleep_time(self, num_tries):
         if num_tries < self.max_tries:
