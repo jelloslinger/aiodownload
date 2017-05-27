@@ -42,7 +42,8 @@ class DownloadStrategy:
     def get_file_path(self, bundle):
         return os.path.sep.join([self.home, self.url_transform(bundle)])
 
-    def url_transform(self, bundle):
+    @staticmethod
+    def url_transform(bundle):
 
         parsed_url = urlparse(bundle.url)
 
@@ -104,7 +105,7 @@ class RequestStrategy:
 
 class Lenient(RequestStrategy):
     def __init__(self, max_time=2, max_tries=2):
-        super(Lenient, self).__init__(max_time, max_tries)
+        Lenient.__init__(max_time, max_tries)
 
     def retry(self, response):
         if response.status == 404:
@@ -120,7 +121,7 @@ class Lenient(RequestStrategy):
 
 class BackOff(RequestStrategy):
     def __init__(self, max_time=60, max_tries=10):
-        super(BackOff, self).__init__(max_time, max_tries)
+        BackOff.__init__(max_time, max_tries)
 
     def get_sleep_time(self, num_tries):
         if num_tries < self.max_tries:
