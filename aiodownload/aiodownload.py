@@ -72,7 +72,7 @@ class AioDownload:
                     if bundle._status_msg == STATUS_ATTEMPT:
                         logger.info(bundle.status_msg)
 
-                    sleep_time = self._request_strategy.get_sleep_time(bundle.num_tries)
+                    sleep_time = self._request_strategy.get_sleep_time(bundle)
                     logger.debug('Sleeping {0} seconds between requests'.format(sleep_time))
                     await asyncio.sleep(sleep_time)
 
