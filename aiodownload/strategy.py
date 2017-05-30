@@ -1,9 +1,7 @@
-import errno
 import logging
 import os
-import string
-import unicodedata
-from urllib.parse import urlparse
+
+from aiodownload.util import default_url_transform, make_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -13,8 +11,6 @@ class DownloadStrategy:
     to control download options for AioDownload.
     """
 
-    REPLACEMENT_CHAR = {'&': '-', ',': '.', ';': '-', '=': '_'}
-
     def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
         self.chunk_size = chunk_size
         self.concurrent = concurrent
@@ -23,12 +19,12 @@ class DownloadStrategy:
 
     async def on_fail(self, bundle):
 
-        DownloadStrategy.make_dirs(bundle.file_path)
+        make_dirs(bundle.file_path)
         open(bundle.file_path, 'wb+').close()
 
     async def on_success(self, response, bundle):
 
-        DownloadStrategy.make_dirs(bundle.file_path)
+        make_dirs(bundle.file_path)
 
         with open(bundle.file_path, 'wb+') as f:
             while True:
@@ -38,55 +34,11 @@ class DownloadStrategy:
                 f.write(chunk)
 
     def get_file_path(self, bundle):
-        return os.path.sep.join([self.home, self.url_transform(bundle)])
 
-    @staticmethod
-    def make_dirs(file_path):
-
-        try:
-            os.makedirs(os.path.dirname(file_path))
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
-
-    @staticmethod
-    def url_transform(bundle):
-
-        parsed_url = urlparse(bundle.url)
-
-        path_segments = [
-            DownloadStrategy.clean_filename(path_segment) for path_segment in parsed_url.path.split('/')[1:]
-        ]
-        if not len(path_segments):
-            path_segments = ['index']
-
-        params = DownloadStrategy.clean_filename(parsed_url.params)
-        if len(params):
-            params = '(' + params + ')'
-
-        query = DownloadStrategy.clean_filename(parsed_url.query)
-        if len(query):
-            query = '_' + query
-
-        return os.path.sep.join([parsed_url.netloc] + path_segments) + params + query
-
-    @staticmethod
-    def clean_filename(filename):
-
-        return ''.join(
-            [
-                c for c in unicodedata.normalize(
-                    'NFKD',
-                    ''.join([DownloadStrategy.replace_char(c) for c in filename])
-                )
-                if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(string.ascii_letters, string.digits)
-            ]
-        )
-
-    @staticmethod
-    def replace_char(char, replacements=None):
-
-        return DownloadStrategy.REPLACEMENT_CHAR.get(char, char) if not replacements else replacements.get(char, char)
+        return os.path.sep.join([
+            self.home,
+            default_url_transform(bundle.url)       # transforms the URL into a relative file path
+        ])
 
 
 class RequestStrategy:
