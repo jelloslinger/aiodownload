@@ -52,8 +52,8 @@ class AioDownload:
             self.client = client
 
         # Configuration objects managing download and request strategies
-        self._download_strategy = download_strategy or DownloadStrategy()  # properties: chunk_size, home, skip_cached
-        self._request_strategy = request_strategy or Lenient()  # properties: max_time, max_tries, timeout
+        self._download_strategy = download_strategy or DownloadStrategy()  # chunk_size, concurrent, home, skip_cached
+        self._request_strategy = request_strategy or Lenient()  # max_time, max_tries, timeout
 
     async def main(self, bundle):
 
