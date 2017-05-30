@@ -55,6 +55,9 @@ class AioDownload:
         self._download_strategy = download_strategy or DownloadStrategy()  # chunk_size, concurrent, home, skip_cached
         self._request_strategy = request_strategy or Lenient()  # max_time, max_tries, timeout
 
+        # Bounded semaphore guards how many requests can run concurrently
+        self._main_semaphore = asyncio.BoundedSemaphore(self._download_strategy.concurrent)
+
     async def main(self, bundle):
 
         with (await self._download_strategy._main_semaphore):

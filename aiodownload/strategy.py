@@ -1,4 +1,3 @@
-import asyncio
 import errno
 import logging
 import os
@@ -18,23 +17,18 @@ class DownloadStrategy:
 
     def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
         self.chunk_size = chunk_size
+        self.concurrent = concurrent
         self.home = home or os.getcwd()
         self.skip_cached = skip_cached
 
-        # Bounded semaphore guards how many requests can run concurrently
-        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)  # maximum concurrent aiohttp connections
-
     async def on_fail(self, bundle):
 
+        DownloadStrategy.make_dirs(bundle.file_path)
         open(bundle.file_path, 'wb+').close()
 
     async def on_success(self, response, bundle):
 
-        try:
-            os.makedirs(os.path.dirname(bundle.file_path))
-        except OSError as exc:  # Guard against race condition
-            if exc.errno != errno.EEXIST:
-                raise
+        DownloadStrategy.make_dirs(bundle.file_path)
 
         with open(bundle.file_path, 'wb+') as f:
             while True:
@@ -45,6 +39,15 @@ class DownloadStrategy:
 
     def get_file_path(self, bundle):
         return os.path.sep.join([self.home, self.url_transform(bundle)])
+
+    @staticmethod
+    def make_dirs(file_path):
+
+        try:
+            os.makedirs(os.path.dirname(file_path))
+        except OSError as exc:  # Guard against race condition
+            if exc.errno != errno.EEXIST:
+                raise
 
     @staticmethod
     def url_transform(bundle):
