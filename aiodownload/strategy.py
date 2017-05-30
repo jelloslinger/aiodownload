@@ -104,7 +104,7 @@ class RequestStrategy:
 
 
 class Lenient(RequestStrategy):
-    def __init__(self, max_time=2, max_tries=2):
+    def __init__(self, max_time=60, max_tries=5):
         RequestStrategy.__init__(self, max_time, max_tries)
 
     def retry(self, response):
