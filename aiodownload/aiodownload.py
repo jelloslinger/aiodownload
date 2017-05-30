@@ -34,7 +34,7 @@ class AioDownloadBundle:
 
     @property
     def status_msg(self):
-        return '[URL: {0}, File Path: {1}, Attempts: {2}, Status: {3}]'.format(
+        return '[URL: {}, File Path: {}, Attempts: {}, Status: {}]'.format(
             self.url, self.file_path, self.num_tries, self._status_msg
         )
 
