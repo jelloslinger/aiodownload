@@ -60,7 +60,7 @@ class AioDownload:
 
     async def main(self, bundle):
 
-        with (await self._download_strategy._main_semaphore):
+        with (await self._main_semaphore):
 
             bundle.file_path = self._download_strategy.get_file_path(bundle)
             file_exists = os.path.isfile(bundle.file_path)
