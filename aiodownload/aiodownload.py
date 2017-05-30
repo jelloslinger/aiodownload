@@ -40,7 +40,7 @@ class AioDownloadBundle:
 
 
 class AioDownload:
-    def __init__(self, client=None, concurrent=2, download_strategy=None, request_strategy=None):
+    def __init__(self, client=None, download_strategy=None, request_strategy=None):
 
         if not client:
             # Get the event loop and initialize a client session if not provided
@@ -51,16 +51,13 @@ class AioDownload:
             self.loop = client._loop
             self.client = client
 
-        # Bounded semaphore guards how many main methods run concurrently
-        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)  # maximum concurrent aiohttp connections
-
         # Configuration objects managing download and request strategies
         self._download_strategy = download_strategy or DownloadStrategy()  # properties: chunk_size, home, skip_cached
         self._request_strategy = request_strategy or Lenient()  # properties: max_time, max_tries, timeout
 
     async def main(self, bundle):
 
-        with (await self._main_semaphore):
+        with (await self._download_strategy._main_semaphore):
 
             bundle.file_path = self._download_strategy.get_file_path(bundle)
             file_exists = os.path.isfile(bundle.file_path)

@@ -1,3 +1,4 @@
+import asyncio
 import errno
 import logging
 import os
@@ -15,10 +16,13 @@ class DownloadStrategy:
 
     REPLACEMENT_CHAR = {'&': '-', ',': '.', ';': '-', '=': '_'}
 
-    def __init__(self, chunk_size=65536, home=None, skip_cached=False):
+    def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
         self.chunk_size = chunk_size
         self.home = home or os.getcwd()
         self.skip_cached = skip_cached
+
+        # Bounded semaphore guards how many requests can run concurrently
+        self._main_semaphore = asyncio.BoundedSemaphore(concurrent)  # maximum concurrent aiohttp connections
 
     async def on_fail(self, bundle):
 
