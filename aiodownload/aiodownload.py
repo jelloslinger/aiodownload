@@ -128,9 +128,6 @@ class AioDownload:
 
         return bundle
 
-    def get_bundled_tasks(self, urls):
-        return [self.loop.create_task(self.main(AioDownloadBundle(url))) for url in urls]
-
 
 class AioDownloadException(Exception):
     pass
