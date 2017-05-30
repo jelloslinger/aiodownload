@@ -1,5 +1,6 @@
-from aiodownload import AioDownloadBundle, AioDownload
 import asyncio
+
+from aiodownload import AioDownloadBundle, AioDownload
 
 
 def one(url_or_bundle, download=None):
@@ -32,3 +33,5 @@ def each(iterable, url_map=None, download=None):
     for task_set in download.loop.run_until_complete(asyncio.wait(tasks)):
         for task in task_set:
             yield task.result()
+
+    download.client.close()
