@@ -1,7 +1,13 @@
+"""strategy
+
+This module contains base class and sensible default class implementations
+for the request and download strategies used by :class:`AioDownload`
+"""
+
 import logging
 import os
 
-from aiodownload.util import default_url_transform, make_dirs
+from .util import default_url_transform, make_dirs
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +15,15 @@ logger = logging.getLogger(__name__)
 class DownloadStrategy:
     """DownloadStrategy is an injection class for AioDownload.  The purpose is
     to control download options for AioDownload.
+
+    :param chunk_size: the incremental chunk size to read from the response
+    :type chunk_size: (optional) int
+    :param concurrent: the number of concurrent asynchronous HTTP requests to maintain
+    :type concurrent: (optional) int
+    :param home: the base file path to use for writing response content to file
+    :type honme: (optional) str
+    :param skip_cached: indicates whether existing written files should be skipped
+    :type skip_cahced: bool
     """
 
     def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
@@ -18,11 +33,27 @@ class DownloadStrategy:
         self.skip_cached = skip_cached
 
     async def on_fail(self, bundle):
+        """Write an empty file
+
+        :param bundle: bundle (file_path should exist)
+        :type bundle: :class:`AioDownloadBundle`
+
+        :return: None
+        """
 
         make_dirs(bundle.file_path)
         open(bundle.file_path, 'wb+').close()
 
     async def on_success(self, response, bundle):
+        """Write the response to the file path indicated in the bundle
+
+        :param response: successful response from an HTTP response
+        :type response: :class:`aiohttp.ClientResponse`
+        :param bundle: bundle (file_path should exist)
+        :type bundle: :class:`AioDownloadBundle`
+
+        :return: None
+        """
 
         make_dirs(bundle.file_path)
 
@@ -34,6 +65,14 @@ class DownloadStrategy:
                 f.write(chunk)
 
     def get_file_path(self, bundle):
+        """Get the file path for the bundle
+
+        :param bundle: bundle (generally, it's file_path should be None)
+        :type bundle: :class:`AioDownloadBundle`
+
+        :return: full file_path for the bundle (via the default URL transformation)
+        :rtype: str
+        """
 
         return os.path.sep.join([
             self.home,
@@ -43,37 +82,76 @@ class DownloadStrategy:
 
 class RequestStrategy:
     """RequestStrategy is an injection class for AioDownload.  The purpose is
-    to control how AioDownload performs requests and retry requests.
+    to control how AioDownload performs requests and retries requests.
+
+    :param max_tries: maximum number of attempts before giving up
+    :type max_tries: int
+    :param time_out: timeout for the client session
+    :type time_out: int
     """
 
-    def __init__(self, max_tries=0, timeout=60):
-        self.max_tries = max_tries
+    def __init__(self, max_attempts=0, timeout=60):
+        self.max_attempts = max_attempts
         self.timeout = timeout
 
-    @staticmethod
-    def assert_response(response):
+    def assert_response(self, response):
+        """Assertion for the response
+
+        :param response: response from an HTTP response
+        :type response: :class:`aiohttp.ClientResponse`
+        :return: None or AssertionError
+        """
+
         assert response.status < 400
 
     def retry(self, response):
+        """Retry the HTTP request based on the response
+
+        :param response: response from an HTTP response
+        :type response: :class:`aiohttp.ClientResponse`
+
+        :return:
+        :rtype: bool
+        """
+
         return False
 
     def get_sleep_time(self, bundle):
+        """Returns how much time the bundle should sleep based on it's properties
+
+        :param bundle: bundle
+        :type bundle: :class:`AioDownloadBundle`
+
+        :return: sleep time
+        :rtype: int
+        """
+
         return -1
 
 
 class Lenient(RequestStrategy):
-    def __init__(self, max_tries=5):
-        RequestStrategy.__init__(self, max_tries)
+    """Lenient request strategy designed for an average web server.  Try five
+    times with a minute between each retry.
+    """
+
+    def __init__(self, max_attempts=5):
+        RequestStrategy.__init__(self, max_attempts)
 
     def retry(self, response):
+        """Retry any unsuccessful HTTP response except a 404 (if they say
+        it's not there let's believe them)
+        """
+
         if response.status == 404:
             return False
         return True
 
     def get_sleep_time(self, bundle):
+
+        # Retry pattern: 0.25, 60, 60, 60, 60
         if bundle.num_tries == 0:
             sleep_time = 0.25
-        elif bundle.num_tries < self.max_tries:
+        elif bundle.num_tries < self.max_attempts:
             sleep_time = 60
         else:
             sleep_time = -1
@@ -82,11 +160,18 @@ class Lenient(RequestStrategy):
 
 
 class BackOff(RequestStrategy):
-    def __init__(self, max_tries=10):
-        RequestStrategy.__init__(self, max_tries)
+    """Back Off request strategy designed for APIs and web servers that can
+    be hammered a little harder.  Exponentially back away if a failed
+    response is returned.
+    """
+
+    def __init__(self, max_attempts=10):
+        RequestStrategy.__init__(self, max_attempts)
 
     def get_sleep_time(self, bundle):
-        if bundle.num_tries < self.max_tries:
+
+        # Retry pattern: 0.25, 0.5, 1, 2, 4, 8, 16, 32, 60, 60
+        if bundle.num_tries < self.max_attempts:
             return min(2**(bundle.num_tries - 2), 60)
         else:
             return -1
