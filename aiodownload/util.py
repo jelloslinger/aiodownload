@@ -1,3 +1,9 @@
+"""util
+
+This module contains some utility function used to help with the
+implementation of the default strategies
+"""
+
 import errno
 import os
 import string
@@ -9,6 +15,15 @@ REPLACEMENT_CHAR = {'&': '-', ',': '.', ';': '-', '=': '_'}
 
 
 def clean_filename(filename):
+    """Return a sanitized filename (replace / strip out illegal characters)
+
+    :param filename: string used for a filename
+    :type filename: str
+
+    :return: sanitized filename
+    :rtype: str
+    """
+
     return ''.join([
         c for c in unicodedata.normalize(
             'NFKD',
@@ -19,6 +34,14 @@ def clean_filename(filename):
 
 
 def make_dirs(file_path):
+    """Make the directories for a file path
+
+    :param file_path: file path to be created if it doesn't exist
+    :type file_path: str
+
+    :return: None
+    """
+
     try:
         os.makedirs(os.path.dirname(file_path))
     except OSError as exc:  # Guard against race condition
@@ -27,10 +50,31 @@ def make_dirs(file_path):
 
 
 def replace_char(char, replacements=None):
+    """Replace a character with one in a replacement mapping
+
+    :param char: character to be replaced or returned
+    :type char: str
+    :param replacements: replacement mapping
+    :type replacements: dict
+
+    :return: same or replaced character
+    :rtype: str
+    """
+
     return REPLACEMENT_CHAR.get(char, char) if not replacements else replacements.get(char, char)
 
 
 def default_url_transform(url):
+    """URL path segments are transformed into directories along a file path
+    with the last path segment representing the filename.
+
+    :param url: URL string
+    :type url: str
+
+    :return: file path
+    :rtype: str
+    """
+
     parsed_url = urlparse(url)
 
     path_segments = [

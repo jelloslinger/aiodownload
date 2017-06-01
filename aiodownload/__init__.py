@@ -14,6 +14,6 @@ __all__ = (
     'Lenient',
     'RequestStrategy',
     'one',
-    'each'
+    'each',
     'swarm'
 )
