@@ -169,7 +169,3 @@ class AioDownload:
                 logger.warn(' '.join([bundle.status_msg, str(err)]))
 
         return bundle
-
-
-class AioDownloadException(Exception):
-    pass
