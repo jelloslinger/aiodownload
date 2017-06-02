@@ -27,7 +27,7 @@ def clean_filename(filename):
     return ''.join([
         c for c in unicodedata.normalize(
             'NFKD',
-            ''.join([replace_char(c) for c in filename])
+            ''.join([REPLACEMENT_CHAR.get(c, c) for c in filename])
         )
         if not unicodedata.combining(c) and c in '-_.() {0}{1}'.format(string.ascii_letters, string.digits)
     ])
@@ -47,21 +47,6 @@ def make_dirs(file_path):
     except OSError as exc:  # Guard against race condition
         if exc.errno != errno.EEXIST:
             raise
-
-
-def replace_char(char, replacements=None):
-    """Replace a character with one in a replacement mapping
-
-    :param char: character to be replaced or returned
-    :type char: str
-    :param replacements: replacement mapping
-    :type replacements: dict
-
-    :return: same or replaced character
-    :rtype: str
-    """
-
-    return REPLACEMENT_CHAR.get(char, char) if not replacements else replacements.get(char, char)
 
 
 def default_url_transform(url):
