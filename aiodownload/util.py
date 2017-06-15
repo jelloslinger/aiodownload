@@ -46,7 +46,7 @@ def make_dirs(file_path):
         os.makedirs(os.path.dirname(file_path))
     except OSError as exc:  # Guard against race condition
         if exc.errno != errno.EEXIST:
-            raise
+            raise  # pragma: no cover
 
 
 def default_url_transform(url):
