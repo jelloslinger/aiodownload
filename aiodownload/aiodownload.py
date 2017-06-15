@@ -35,9 +35,9 @@ class AioDownloadBundle:
 
     def __init__(self, url, info=None, params=None):
 
+        self.attempts = 0  # value to be incremented by AioDownload when a request is attempted
         self.file_path = None  # determined by DownloadStrategy.url_transform
         self.info = info
-        self.num_tries = 0  # value to be incremented by AioDownload when a request is attempted
         self.params = params
         self.url = url
         self._status_msg = STATUS_INIT  # set by AioDownload depending of the where it is in the flow of execution
@@ -45,7 +45,7 @@ class AioDownloadBundle:
     @property
     def status_msg(self):
         return '[URL: {}, File Path: {}, Attempts: {}, Status: {}]'.format(
-            self.url, self.file_path, self.num_tries, self._status_msg
+            self.url, self.file_path, self.attempts, self._status_msg
         )
 
 
@@ -134,7 +134,7 @@ class AioDownload:
 
             try:
 
-                bundle.num_tries += 1
+                bundle.attempts += 1
 
                 client_method = getattr(self.client, 'post' if bundle.params else 'get')
                 async with client_method(bundle.url) as response:
@@ -149,7 +149,7 @@ class AioDownload:
 
                         if self._request_strategy.retry(response):
 
-                            if bundle.num_tries == self._request_strategy.max_tries:
+                            if bundle.attempts == self._request_strategy.max_tries:
 
                                 await self._download_strategy.on_fail(bundle)
                                 bundle._status_msg = STATUS_FAIL
@@ -166,6 +166,6 @@ class AioDownload:
             except ValueError as err:
 
                 bundle._status_msg = STATUS_FAIL
-                logger.warn(' '.join([bundle.status_msg, str(err)]))
+                logger.warning(' '.join([bundle.status_msg, str(err)]))
 
         return bundle
