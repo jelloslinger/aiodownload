@@ -23,7 +23,7 @@ class DownloadStrategy:
     :param home: the base file path to use for writing response content to file
     :type honme: (optional) str
     :param skip_cached: indicates whether existing written files should be skipped
-    :type skip_cahced: bool
+    :type skip_cached: bool
     """
 
     def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
@@ -84,8 +84,8 @@ class RequestStrategy:
     """RequestStrategy is an injection class for AioDownload.  The purpose is
     to control how AioDownload performs requests and retries requests.
 
-    :param max_tries: maximum number of attempts before giving up
-    :type max_tries: int
+    :param max_attempts: maximum number of attempts before giving up
+    :type max_attempts: int
     :param time_out: timeout for the client session
     :type time_out: int
     """
