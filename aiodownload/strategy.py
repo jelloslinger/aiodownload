@@ -149,9 +149,9 @@ class Lenient(RequestStrategy):
     def get_sleep_time(self, bundle):
 
         # Retry pattern: 0.25, 60, 60, 60, 60
-        if bundle.num_tries == 0:
+        if bundle.attempts == 0:
             sleep_time = 0.25
-        elif bundle.num_tries < self.max_attempts:
+        elif bundle.attempts < self.max_attempts:
             sleep_time = 60
         else:
             sleep_time = -1
@@ -171,7 +171,7 @@ class BackOff(RequestStrategy):
     def get_sleep_time(self, bundle):
 
         # Retry pattern: 0.25, 0.5, 1, 2, 4, 8, 16, 32, 60, 60
-        if bundle.num_tries < self.max_attempts:
-            return min(2**(bundle.num_tries - 2), 60)
+        if bundle.attempts < self.max_attempts:
+            return min(2**(bundle.attempts - 2), 60)
         else:
             return -1
