@@ -87,10 +87,10 @@ class AioDownload:
         indicating that the file came from cache as the file existed.
 
         :param bundle: bundle (generally one that has just been instantiated)
-        :type bundle: :class:`aiodownload.AioDownloadBundle
+        :type bundle: :class:`aiodownload.AioDownloadBundle`
 
         :return: bundle with updated properties reflecting it's final state
-        :rtype bundle: :class:`aiodownload.AioDownloadBundle
+        :rtype bundle: :class:`aiodownload.AioDownloadBundle`
         """
 
         with (await self._main_semaphore):
@@ -124,10 +124,10 @@ class AioDownload:
         request strategies of the instance to implement how this is achieved.
 
         :param bundle: bundle with it's url and file_path set
-        :type bundle: :class:`aiodownload.AioDownloadBundle
+        :type bundle: :class:`aiodownload.AioDownloadBundle`
 
         :return: bundle with updated properties reflecting success or failure
-        :rtype bundle: :class:`aiodownload.AioDownloadBundle
+        :rtype bundle: :class:`aiodownload.AioDownloadBundle`
         """
 
         with aiohttp.Timeout(self._request_strategy.timeout):
