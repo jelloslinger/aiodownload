@@ -72,11 +72,11 @@ class AioDownload:
             self.client = client
 
         # Configuration objects managing download and request strategies
-        self._download_strategy = download_strategy or DownloadStrategy()  # chunk_size, concurrent, home, skip_cached
-        self._request_strategy = request_strategy or Lenient()  # max_attempts, timeout
+        self._download_strategy = download_strategy or DownloadStrategy()  # chunk_size, home, skip_cached
+        self._request_strategy = request_strategy or Lenient()  # concurrent, max_attempts, timeout
 
         # Bounded semaphore guards how many requests can run concurrently
-        self._main_semaphore = asyncio.BoundedSemaphore(self._download_strategy.concurrent)
+        self._main_semaphore = asyncio.BoundedSemaphore(self._request_strategy.concurrent)
 
     async def main(self, bundle):
         """Main entry point for task creation with an asyncio event loop.
