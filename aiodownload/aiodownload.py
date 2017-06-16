@@ -149,7 +149,7 @@ class AioDownload:
 
                         if self._request_strategy.retry(response):
 
-                            if bundle.attempts == self._request_strategy.max_tries:
+                            if bundle.attempts == self._request_strategy.max_attempts:
 
                                 await self._download_strategy.on_fail(bundle)
                                 bundle._status_msg = STATUS_FAIL
