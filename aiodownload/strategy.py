@@ -18,17 +18,14 @@ class DownloadStrategy:
 
     :param chunk_size: the incremental chunk size to read from the response
     :type chunk_size: (optional) int
-    :param concurrent: the number of concurrent asynchronous HTTP requests to maintain
-    :type concurrent: (optional) int
     :param home: the base file path to use for writing response content to file
     :type honme: (optional) str
     :param skip_cached: indicates whether existing written files should be skipped
     :type skip_cached: bool
     """
 
-    def __init__(self, chunk_size=65536, concurrent=2, home=None, skip_cached=False):
+    def __init__(self, chunk_size=65536, home=None, skip_cached=False):
         self.chunk_size = chunk_size
-        self.concurrent = concurrent
         self.home = home or os.getcwd()
         self.skip_cached = skip_cached
 
@@ -84,13 +81,16 @@ class RequestStrategy:
     """RequestStrategy is an injection class for AioDownload.  The purpose is
     to control how AioDownload performs requests and retries requests.
 
+    :param concurrent: the number of concurrent asynchronous HTTP requests to maintain
+    :type concurrent: (optional) int
     :param max_attempts: maximum number of attempts before giving up
     :type max_attempts: int
     :param time_out: timeout for the client session
     :type time_out: int
     """
 
-    def __init__(self, max_attempts=0, timeout=60):
+    def __init__(self, concurrent=2, max_attempts=0, timeout=60):
+        self.concurrent = concurrent
         self.max_attempts = max_attempts
         self.timeout = timeout
 
