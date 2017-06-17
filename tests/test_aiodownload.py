@@ -24,10 +24,10 @@ def test_aiodownload_init_strategy(download_strategy, request_strategy):
     download = AioDownload(download_strategy=download_strategy, request_strategy=request_strategy)
 
     assert download._download_strategy.chunk_size == download_strategy.chunk_size
-    assert download._download_strategy.concurrent == download_strategy.concurrent
     assert download._download_strategy.home == download_strategy.home
     assert download._download_strategy.skip_cached == download_strategy.skip_cached
 
+    assert download._request_strategy.concurrent == request_strategy.concurrent
     assert download._request_strategy.max_attempts == request_strategy.max_attempts
     assert download._request_strategy.timeout == request_strategy.timeout
 
