@@ -1,0 +1,20 @@
+/* Custom CSS */
+
+.header, .header td {
+    margin: auto !important;
+    padding: 0 10px !important;
+
+    border: none !important;
+    border-spacing: 0 !important;
+    box-shadow: none !important;
+
+    text-align: center !important;
+    vertical-align: middle !important;
+
+    font-size: 24px !important;
+    font-style: italic;
+}
+
+.header td a {
+    border: none !important;
+}

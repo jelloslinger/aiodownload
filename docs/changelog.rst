@@ -1,8 +1,9 @@
-Changelog
+=========
+CHANGELOG
 =========
 
 v.0.2.4 - 2017-05-27
-::::::::::::::::::::
+--------------------
 
 * DownloadStrategy class introduced to break up configuration between the "download" and the "request"
 * BoundedSemaphore implemented to control number of concurrent requests, removed PriorityQueue implementation
@@ -13,7 +14,7 @@ v.0.2.4 - 2017-05-27
 * added short hand functions one, swarm, and each to the API
 
 v.0.1.1 - 2016-07-04
-::::::::::::::::::::
+--------------------
 
 * initial working code release
 * Python 3.5
