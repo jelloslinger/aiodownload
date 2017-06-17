@@ -18,7 +18,7 @@ from os import path
 here = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
+with open(path.join(here, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
@@ -48,15 +48,15 @@ setup(
         #   3 - Alpha
         #   4 - Beta
         #   5 - Production/Stable
-        # 'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
 
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
 
-        # Written for Python 3.5 to start.  Full Python 3 compatibility TBD
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
 
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Software Development :: Libraries :: Python Modules'
