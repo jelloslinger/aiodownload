@@ -1,9 +1,9 @@
-"""api
+"""Public API Functions
 
 This module contains the public API functions.  The goal is to gain the
-benefits of the asynchronous HTTP requests without having to think much about
-it.  Using these functions on their own does not involve any knowledge of
-how to use asynchronous programming or asyncio.  Simply import aiodownload
+benefits of asynchronous HTTP requests while dropping one of these functions
+into a synchronous code flow.  For basic usage, no prior knowledge of
+asynchronous programming or asyncio is required.  Simply import aiodownload
 and call the functions with some URLs.
 """
 
