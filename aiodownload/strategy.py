@@ -1,4 +1,4 @@
-"""strategy
+"""Strategies
 
 This module contains base class and sensible default class implementations
 for the request and download strategies used by :class:`AioDownload`
