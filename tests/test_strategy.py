@@ -80,14 +80,10 @@ def test_lenient_get_sleep_time(lenient, bundle):
         bundle.attempts += 1
         assert lenient.get_sleep_time(bundle) == 60
 
-    bundle.attempts += 1
-    assert lenient.get_sleep_time(bundle) == -1
-
 
 def test_back_off_get_sleep_time(back_off, bundle):
+    expected_back_off_sequence = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 60, 60]
 
-    expected_back_off_sequence = [0.25, 0.5, 1, 2, 4, 8, 16, 32, 60, 60, -1]
-
-    for i in range(0, 11):
+    for i in range(0, len(expected_back_off_sequence)):
         assert back_off.get_sleep_time(bundle) == expected_back_off_sequence[i]
         bundle.attempts += 1
