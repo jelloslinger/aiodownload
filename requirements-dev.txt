@@ -1,3 +1,4 @@
+codecov
 pytest
 pytest-asyncio
 sphinx
