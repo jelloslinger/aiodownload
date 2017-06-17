@@ -1,19 +1,33 @@
 ===========
 aiodownload
 ===========
-Asynchronous Downloads Made Easy
---------------------------------
 
-.. image:: https://img.shields.io/pypi/l/aiodownload.svg
+.. rst-class:: header
+
++------------------------------------------------+----------------------------+
+| |tagline|                                      |                            |
++------------------------------------------------+ |logo|                     |
+| |badge1| |badge2| |badge3|                     |                            |
++------------------------------------------------+----------------------------+
+
+.. |tagline| replace:: Asynchronous Requests and Downloads Without Thinking About It
+
+.. |logo| image:: _static/tree-roots.svg
+
+.. |badge1| image:: https://img.shields.io/pypi/l/aiodownload.svg
     :target: https://pypi.python.org/pypi/aiodownload
 
-.. image:: https://img.shields.io/pypi/wheel/aiodownload.svg
+.. |badge2| image:: https://img.shields.io/pypi/wheel/aiodownload.svg
     :target: https://pypi.python.org/pypi/aiodownload
 
--------------------
+.. |badge3| image:: https://codecov.io/github/jelloslinger/aiodownload/coverage.svg?branch=master
+    :target: https://codecov.io/github/jelloslinger/aiodownload
+    :alt: codecov.io
+
+----
 
 Basic Usage
-:::::::::::
+-----------
 
 .. code-block:: shell-session
 
@@ -29,16 +43,23 @@ Basic Usage
      'https://httpbin.org/links/3': 'C:\\\\httpbin.org\\links\\3',
      'https://httpbin.org/links/4': 'C:\\\\httpbin.org\\links\\4'}
 
-Out of the box, batteries included, you get two concurrent requests.  Any request returning a status greater than 400
-(except 404) is tried every minute up to 5 times.  This is the default request strategy.  Your average web server is
-expected to go down from time to time so let's give it a few minutes to recover.
+Default Request Strategy (Lenient)
+    - two concurrent requests with 0.25 s delay between requests
+    - automatically retry unsuccessful requests up to 4 more times with 60 s between attempts
+    - response statuses greater than 400 are considered unsuccessful requests
+    - 404s are not retried (if they tell us it's not found, let's believe them)
 
-The default download strategy is to take the content returned from the request and write it to a file relative to the
-current working directory.  The relative path and filename are a transformation of the url path segments (the last
-path segment being the filename).
+Default Download Strategy
+    - read and write 65536 byte chunks at a time
+    - uses the current working directory as home path to write files
+    - relative path and filename are a transformation of the url path segments (the last segment being the filename)
+
+Customizable Strategies
+    - Want *aiodownload* to behave differently? Configure the underlying classes to create your own strategies. Please
+      see :ref:`Usage Guide` for more information.
 
 Installation
-::::::::::::
+------------
 
 .. code-block:: shell-session
 
