@@ -142,9 +142,7 @@ class Lenient(RequestStrategy):
         it's not there, let's believe them)
         """
 
-        if response.status == 404:
-            return False
-        return True
+        return False if response.status == 404 else True
 
     def get_sleep_time(self, bundle):
 
