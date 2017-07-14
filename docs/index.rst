@@ -2,13 +2,17 @@
 
 .. include:: ../README.rst
 
+Examples
+--------
+
+See the *example* package for more basic usages and different ways to configure base objects.
+
 Documentation
 -------------
 
 .. toctree::
    :maxdepth: 2
 
-   guide
    api
    changelog
 
@@ -30,7 +34,7 @@ functions.
 
    <a href="http://aiohttp.readthedocs.io/en/stable/client.html" target="_blank">aiohttp.ClientSession</a>
 
-The public function API for this project was taken from |simple_requests_link| which utilizes |gevent_link| and
+The public function API for this project was adapted from |simple_requests_link| which utilizes |gevent_link| and
 |requests_link|.  The motivation for reimplementation was to use the native event loop introduced in Python 3.  No
 monkey patching required.
 
