@@ -2,6 +2,14 @@
 CHANGELOG
 =========
 
+v.0.2.5 - 2017-07-13
+--------------------
+
+* Added an example package to illustrate usage
+* Added documentation
+* Added tests
+* Added util module (holds some utility functions for some of the default implementations)
+
 v.0.2.4 - 2017-05-27
 --------------------
 
