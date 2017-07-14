@@ -12,7 +12,7 @@ aiodownload
 
 .. |tagline| replace:: Asynchronous Requests and Downloads Without Thinking About It
 
-.. |logo| image:: _static/tree-roots.svg
+.. |logo| image:: https://raw.githubusercontent.com/jelloslinger/aiodownload/development/docs/_static/tree-roots.svg
 
 .. |badge1| image:: https://img.shields.io/pypi/l/aiodownload.svg
     :target: https://pypi.python.org/pypi/aiodownload
