@@ -55,8 +55,7 @@ Default Download Strategy
     - relative path and filename are a transformation of the url path segments (the last segment being the filename)
 
 Customizable Strategies
-    - Want *aiodownload* to behave differently? Configure the underlying classes to create your own strategies. Please
-      see :ref:`Usage Guide` for more information.
+    - Want *aiodownload* to behave differently? Configure the underlying classes to create your own strategies.
 
 Installation
 ------------
