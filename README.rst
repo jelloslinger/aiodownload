@@ -7,12 +7,12 @@ aiodownload
 +------------------------------------------------+----------------------------+
 | |tagline|                                      |                            |
 +------------------------------------------------+ |logo|                     |
-| |badge1| |badge2| |badge3|                     |                            |
+| |badge1| |badge2| |badge3| |badge4|            |                            |
 +------------------------------------------------+----------------------------+
 
 .. |tagline| replace:: Asynchronous Requests and Downloads Without Thinking About It
 
-.. |logo| image:: https://raw.githubusercontent.com/jelloslinger/aiodownload/development/docs/_static/tree-roots.svg
+.. |logo| image:: _static/tree-roots.svg
 
 .. |badge1| image:: https://img.shields.io/pypi/l/aiodownload.svg
     :target: https://pypi.python.org/pypi/aiodownload
@@ -20,7 +20,10 @@ aiodownload
 .. |badge2| image:: https://img.shields.io/pypi/wheel/aiodownload.svg
     :target: https://pypi.python.org/pypi/aiodownload
 
-.. |badge3| image:: https://codecov.io/github/jelloslinger/aiodownload/coverage.svg?branch=master
+.. |badge3| image:: https://img.shields.io/travis/jelloslinger/aiodownload.svg
+    :target: https://pypi.python.org/pypi/aiodownload
+
+.. |badge4| image:: https://codecov.io/github/jelloslinger/aiodownload/coverage.svg?branch=master
     :target: https://codecov.io/github/jelloslinger/aiodownload
     :alt: codecov.io
 
