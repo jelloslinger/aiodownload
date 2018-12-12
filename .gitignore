@@ -1,4 +1,5 @@
 .idea           # JetBrains' PyCharm
+.vscode         # VS Code
 docs/_build     # Sphinx Build Directory
 
 # **BELOW THIS LINE WAS AUTO-GENERATED**
