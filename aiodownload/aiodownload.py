@@ -5,6 +5,7 @@ This module contains the core classes.
 
 import aiohttp
 import asyncio
+import async_timeout
 import logging
 import os
 
@@ -130,7 +131,7 @@ class AioDownload:
         :rtype bundle: :class:`aiodownload.AioDownloadBundle`
         """
 
-        with aiohttp.Timeout(self._request_strategy.timeout):
+        with async_timeout.timeout(self._request_strategy.timeout):
 
             try:
 
